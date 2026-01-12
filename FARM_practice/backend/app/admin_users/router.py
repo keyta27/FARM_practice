@@ -77,3 +77,24 @@ def update_admin_user(payload: UpdateAdminUser, admin_user_id: int = Path(..., g
     session.commit()
     session.refresh(db_admin_user)
     return db_admin_user
+
+
+@router.delete("/{admin_user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_admin_user(admin_user_id: int = Path(..., ge=1), session: Session = Depends(get_session)):
+    db_user = session.exec(select(AdminUser).where(
+        AdminUser.id == admin_user_id)).first()
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Admin user not found")
+
+    if not db_user.is_active:
+        return
+
+    db_user.is_active = False
+
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
